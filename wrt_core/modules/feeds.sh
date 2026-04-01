@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# 开关：1=启用passwall，0=禁用passwall
+ENABLE_PASSWALL=0
+
 update_feeds() {
     local FEEDS_PATH="$BUILD_DIR/$FEEDS_CONF"
     if [[ -f "$BUILD_DIR/feeds.conf" ]]; then
@@ -13,9 +16,12 @@ update_feeds() {
         echo "src-git small8 https://github.com/kenzok8/jell" >>"$FEEDS_PATH"
     fi
 
-    if ! grep -q "openwrt-passwall" "$FEEDS_PATH"; then
-        [ -z "$(tail -c 1 "$FEEDS_PATH")" ] || echo "" >>"$FEEDS_PATH"
-        echo "src-git passwall https://github.com/Openwrt-Passwall/openwrt-passwall;main" >>"$FEEDS_PATH"
+    # Passwall 开关控制
+    if [ "$ENABLE_PASSWALL" = "1" ]; then
+        if ! grep -q "openwrt-passwall" "$FEEDS_PATH"; then
+            [ -z "$(tail -c 1 "$FEEDS_PATH")" ] || echo "" >>"$FEEDS_PATH"
+            echo "src-git passwall https://github.com/Openwrt-Passwall/openwrt-passwall;main" >>"$FEEDS_PATH"
+        fi
     fi
 
     if ! grep -q "openwrt_bandix" "$BUILD_DIR/$FEEDS_CONF"; then
@@ -42,7 +48,7 @@ install_feeds() {
             if [[ $(basename "$dir") == "small8" ]]; then
                 install_small8
                 install_fullconenat
-            elif [[ $(basename "$dir") == "passwall" ]]; then
+            elif [ "$ENABLE_PASSWALL" = "1" ] && [[ $(basename "$dir") == "passwall" ]]; then
                 install_passwall
             else
                 ./scripts/feeds install -f -ap $(basename "$dir")
