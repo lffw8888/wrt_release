@@ -18,6 +18,19 @@ update_menu_location() {
     if [ -d "$(dirname "$tailscale_path")" ] && [ -f "$tailscale_path" ]; then
         sed -i 's/services/vpn/g' "$tailscale_path"
     fi
+
+    # 修复 tailscale 配置文件的 UCI 节类型，与 JS 视图中的 form.NamedSection('settings', 'config') 兼容
+    local tailscale_config_path="$(get_custom_feed_worktree_dir)/luci-app-tailscale/root/etc/config/tailscale"
+    if [ -f "$tailscale_config_path" ]; then
+        sed -i 's/^config tailscale /config config /g' "$tailscale_config_path"
+    fi
+
+    # 同步修改 init.d 脚本，使 config_foreach 遍历新的节类型
+    local tailscale_init_path="$(get_custom_feed_worktree_dir)/luci-app-tailscale/root/etc/init.d/tailscale"
+    if [ -f "$tailscale_init_path" ]; then
+        sed -i "s/config_foreach start_instance 'tailscale'/config_foreach start_instance 'config'/g" "$tailscale_init_path"
+        sed -i "s/config_foreach stop_instance 'tailscale'/config_foreach stop_instance 'config'/g" "$tailscale_init_path"
+    fi
 }
 
 
