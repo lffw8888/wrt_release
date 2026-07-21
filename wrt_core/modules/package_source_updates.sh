@@ -51,18 +51,30 @@ add_ax6600_led() {
         exit 1
     fi
 
-    # 安装 athena-led（核心驱动）
+    # 安装 luci-app-athena-led（JS 界面）
+    if [ -d "$tmp_dir/luci-app-athena-led" ]; then
+        mkdir -p "$BUILD_DIR/package/emortal/luci-app-athena-led"
+        cp -r "$tmp_dir/luci-app-athena-led"/* "$BUILD_DIR/package/emortal/luci-app-athena-led/"
+    fi
+
+    # 安装 athena-led（核心驱动），但改用本地源码编译而非下载预编译二进制
     if [ -d "$tmp_dir/athena-led" ]; then
         mkdir -p "$BUILD_DIR/package/emortal/athena-led"
         cp -r "$tmp_dir/athena-led"/* "$BUILD_DIR/package/emortal/athena-led/"
         chmod +x "$BUILD_DIR/package/emortal/athena-led/files/athena_led.init"
         chmod +x "$BUILD_DIR/package/emortal/athena-led/files/find_button.sh"
-    fi
-
-    # 安装 luci-app-athena-led（JS 界面）
-    if [ -d "$tmp_dir/luci-app-athena-led" ]; then
-        mkdir -p "$BUILD_DIR/package/emortal/luci-app-athena-led"
-        cp -r "$tmp_dir/luci-app-athena-led"/* "$BUILD_DIR/package/emortal/luci-app-athena-led/"
+        
+        # 修改 Makefile：删除预编译二进制下载，改用本地 files/ 目录中的文件
+        local mk="$BUILD_DIR/package/emortal/athena-led/Makefile"
+        if [ -f "$mk" ]; then
+            # 把 Build/Prepare 和 Build/Compile 改为直接安装本地文件
+            sed -i '/^PKG_SOURCE:=/c\# PKG_SOURCE disabled for local build' "$mk"
+            sed -i '/^PKG_SOURCE_URL:=/c\# PKG_SOURCE_URL disabled' "$mk"
+            sed -i '/^PKG_HASH:=/c\# PKG_HASH disabled' "$mk"
+            sed -i 's/^define Build\/Prepare.*/define Build\/Prepare\n\tmkdir -p $(PKG_BUILD_DIR)\n\t$(CP) ./files\/* $(PKG_BUILD_DIR)\/\nendef/' "$mk"
+            sed -i '/^define Build\/Compile$/,/^endef$/c\define Build\/Compile\n\t# Pre-compiled binary installed directly\nendef/' "$mk"
+            sed -i 's|$(INSTALL_BIN) $(PKG_BUILD_DIR)/athena-led|$(INSTALL_BIN) ./files/athena-led|' "$mk"
+        fi
     fi
 
     rm -rf "$tmp_dir"
