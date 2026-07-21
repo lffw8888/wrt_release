@@ -166,6 +166,8 @@ install_custom_feed() {
         oaf open-app-filter luci-app-oaf easytier luci-app-easytier \
         msd_lite luci-app-msd_lite cups luci-app-cupsd
         tailscale luci-app-tailscale
+        luci-app-advanced luci-app-ap-modem luci-app-wan-mac
+
     )
     local required_feed_dirs=(
         cups tcping v2ray-geodata luci-lib-taskd luci-app-openclash
