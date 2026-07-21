@@ -37,24 +37,36 @@ check_default_settings() {
 
 
 add_ax6600_led() {
-    local athena_led_dir="$BUILD_DIR/package/emortal/luci-app-athena-led"
-    local repo_url="https://github.com/NONGFAH/luci-app-athena-led.git"
+    local repo_url="https://github.com/unraveloop/JDC-AX6600-Athena-LED-Controller.git"
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
 
-    echo "正在添加 luci-app-athena-led..."
-    rm -rf "$athena_led_dir" 2>/dev/null
+    echo "正在添加 athena-led（核心驱动 + LuCI JS 界面）..."
+    rm -rf "$BUILD_DIR/package/emortal/athena-led" 2>/dev/null
+    rm -rf "$BUILD_DIR/package/emortal/luci-app-athena-led" 2>/dev/null
 
-    if ! git_retry clone --depth=1 "$repo_url" "$athena_led_dir"; then
-        echo "错误：从 $repo_url 克隆 luci-app-athena-led 仓库失败" >&2
+    if ! git_retry clone --depth=1 "$repo_url" "$tmp_dir"; then
+        echo "错误：从 $repo_url 克隆 athena-led 仓库失败" >&2
+        rm -rf "$tmp_dir"
         exit 1
     fi
 
-    if [ -d "$athena_led_dir" ]; then
-        chmod +x "$athena_led_dir/root/usr/sbin/athena-led"
-        chmod +x "$athena_led_dir/root/etc/init.d/athena_led"
-    else
-        echo "错误：克隆操作后未找到目录 $athena_led_dir" >&2
-        exit 1
+    # 安装 athena-led（核心驱动）
+    if [ -d "$tmp_dir/athena-led" ]; then
+        mkdir -p "$BUILD_DIR/package/emortal/athena-led"
+        cp -r "$tmp_dir/athena-led"/* "$BUILD_DIR/package/emortal/athena-led/"
+        chmod +x "$BUILD_DIR/package/emortal/athena-led/files/athena_led.init"
+        chmod +x "$BUILD_DIR/package/emortal/athena-led/files/find_button.sh"
     fi
+
+    # 安装 luci-app-athena-led（JS 界面）
+    if [ -d "$tmp_dir/luci-app-athena-led" ]; then
+        mkdir -p "$BUILD_DIR/package/emortal/luci-app-athena-led"
+        cp -r "$tmp_dir/luci-app-athena-led"/* "$BUILD_DIR/package/emortal/luci-app-athena-led/"
+    fi
+
+    rm -rf "$tmp_dir"
+    echo "athena-led 增强版添加完成"
 }
 
 
