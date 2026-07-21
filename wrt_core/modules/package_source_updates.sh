@@ -51,10 +51,17 @@ add_ax6600_led() {
         exit 1
     fi
 
-    # 安装 athena-led（核心驱动）— 保持 Makefile 原样，自动从 release 下载二进制
+    # 安装 athena-led（核心驱动）
     if [ -d "$tmp_dir/athena-led" ]; then
         mkdir -p "$BUILD_DIR/package/emortal/athena-led"
         cp -r "$tmp_dir/athena-led"/* "$BUILD_DIR/package/emortal/athena-led/"
+        
+        # 修正版本号：仓库代码是 2.5.0，但 release 二进制最新只有 2.4.0
+        local mk="$BUILD_DIR/package/emortal/athena-led/Makefile"
+        if [ -f "$mk" ]; then
+            sed -i 's/PKG_VERSION:=2.5.0/PKG_VERSION:=2.4.0/g' "$mk"
+            echo "已修正 athena-led 版本号为 2.4.0（匹配最新 release 二进制）"
+        fi
     fi
 
     # 安装 luci-app-athena-led（JS 界面）
