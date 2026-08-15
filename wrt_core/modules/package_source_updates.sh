@@ -260,20 +260,19 @@ update_argon() {
     local dst_theme_path="$BUILD_DIR/feeds/luci/themes/luci-theme-argon"
     local tmp_dir
     tmp_dir=$(mktemp -d)
+
     echo "正在更新 argon 主题..."
+
     if ! git_retry clone --depth 1 "$repo_url" "$tmp_dir"; then
         echo "错误：从 $repo_url 克隆 argon 主题仓库失败" >&2
         rm -rf "$tmp_dir"
         exit 1
     fi
+
     rm -rf "$dst_theme_path"
     rm -rf "$tmp_dir/.git"
     mv "$tmp_dir" "$dst_theme_path"
-    
-    # 兼容旧版 ucode：注释掉 math 模块 import（旧版 ucode 不支持 math 模块）
-    sed -i "s|^import { srand } from 'math';|// import { srand } from 'math'; // math module not available in older ucode|" \
-        "$dst_theme_path/ucode/template/themes/argon/header.ut" 2>/dev/null || true
-    
+
     echo "luci-theme-argon 更新完成"
 }
 
